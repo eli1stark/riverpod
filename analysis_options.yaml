@@ -22,7 +22,7 @@ linter:
 
     # Low value and lacks a quick fix
     combinators_ordering: false
-    
+
     # Low value and high cost to change on all files
     eol_at_end_of_file: false
 
@@ -90,3 +90,6 @@ linter:
 
     # annoying
     sort_pub_dependencies: false
+
+formatter:
+  trailing_commas: preserve
