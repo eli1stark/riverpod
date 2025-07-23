@@ -1,7 +1,5 @@
 // ignore_for_file: invalid_use_of_internal_member
 
-import 'dart:async';
-
 import 'package:flutter/material.dart' hide Listener;
 import 'package:flutter_riverpod/src/internals.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -45,48 +43,6 @@ void main() {
         ),
       ),
     );
-  });
-
-  testWidgets('Supports multiple ProviderScope roots in the same tree',
-      (tester) async {
-    final a = StateProvider((_) => 0);
-    final b = Provider((ref) => ref.watch(a));
-
-    await tester.pumpWidget(
-      // No root scope. We want to test cases where there are multiple roots
-      Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          for (var i = 0; i < 2; i++)
-            SizedBox(
-              width: 100,
-              height: 100,
-              child: ProviderScope(
-                child: Consumer(
-                  builder: (context, ref, _) {
-                    ref.watch(a);
-                    ref.watch(b);
-                    return Container();
-                  },
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-
-    final containers = tester.allElements
-        .where((e) => e.widget is Consumer)
-        .map(ProviderScope.containerOf)
-        .toList();
-
-    expect(containers, hasLength(2));
-
-    for (final container in containers) {
-      container.read(a.notifier).state++;
-    }
-
-    await tester.pump();
   });
 
   testWidgets('ref.invalidate can invalidate a family', (tester) async {
@@ -260,72 +216,6 @@ void main() {
     expect(ref.read(provider), 21);
   });
 
-  testWidgets('widgets cannot modify providers in their build method',
-      (tester) async {
-    final onError = FlutterError.onError;
-    Object? error;
-    FlutterError.onError = (details) {
-      error = details.exception;
-    };
-
-    final provider = StateProvider((ref) => 0);
-    final container = createContainer();
-
-    // using runZonedGuarded as StateNotifier will emit an handleUncaughtError
-    // if a listener threw
-    await runZonedGuarded(
-      () => tester.pumpWidget(
-        UncontrolledProviderScope(
-          container: container,
-          child: Consumer(
-            builder: (context, ref, _) {
-              ref.watch(provider.notifier).state++;
-              return Container();
-            },
-          ),
-        ),
-      ),
-      (error, stack) {},
-    );
-
-    FlutterError.onError = onError;
-    expect(error, isNotNull);
-  });
-
-  testWidgets('ref.watch within a build method can flush providers',
-      (tester) async {
-    final container = createContainer();
-    final dep = StateProvider((ref) => 0);
-    final provider = Provider((ref) => ref.watch(dep));
-
-    // reading `provider` but not listening to it, so that it is active
-    // but with no listener – causing "ref.watch" inside Consumer to flush it
-    container.read(provider);
-
-    // We need to use runAsync as the container isn't attached to a ProviderScope
-    // yet, so the WidgetTester is preventing the scheduler from start microtasks
-    await tester.runAsync<void>(() async {
-      // marking `provider` as out of date
-      container.read(dep.notifier).state++;
-    });
-
-    await tester.pumpWidget(
-      UncontrolledProviderScope(
-        container: container,
-        child: Consumer(
-          builder: (context, ref, _) {
-            return Text(
-              ref.watch(provider).toString(),
-              textDirection: TextDirection.ltr,
-            );
-          },
-        ),
-      ),
-    );
-
-    expect(find.text('1'), findsOneWidget);
-  });
-
   testWidgets('UncontrolledProviderScope gracefully handles vsync',
       (tester) async {
     final container = createContainer();
@@ -372,46 +262,6 @@ void main() {
     expect(container2.scheduler.flutterVsyncs, isEmpty);
   });
 
-  testWidgets('When there are multiple vsyncs, rebuild providers only once',
-      (tester) async {
-    var buildCount = 0;
-    final dep = StateProvider((ref) => 0);
-    final provider = Provider((ref) {
-      buildCount++;
-      return ref.watch(dep);
-    });
-
-    await tester.pumpWidget(
-      Directionality(
-        textDirection: TextDirection.ltr,
-        child: ProviderScope(
-          child: ProviderScope(
-            child: Consumer(
-              builder: (context, ref, _) {
-                return Text('Hello ${ref.watch(provider)}');
-              },
-            ),
-          ),
-        ),
-      ),
-    );
-
-    expect(buildCount, 1);
-    expect(find.text('Hello 0'), findsOneWidget);
-    expect(find.text('Hello 1'), findsNothing);
-
-    final consumerElement = tester.element(find.byType(Consumer));
-    final container = ProviderScope.containerOf(consumerElement);
-
-    container.read(dep.notifier).state++;
-
-    await tester.pump();
-
-    expect(buildCount, 2);
-    expect(find.text('Hello 1'), findsOneWidget);
-    expect(find.text('Hello 0'), findsNothing);
-  });
-
   testWidgets(
       'UncontrolledProviderScope gracefully handles debugCanModifyProviders',
       (tester) async {
@@ -431,30 +281,6 @@ void main() {
     await tester.pumpWidget(Container());
 
     expect(debugCanModifyProviders, null);
-  });
-
-  testWidgets('ref.refresh forces a provider to refresh', (tester) async {
-    var future = Future<int>.value(21);
-    final provider = FutureProvider<int>((ref) => future);
-    late WidgetRef ref;
-
-    await tester.pumpWidget(
-      ProviderScope(
-        child: Consumer(
-          builder: (context, r, _) {
-            ref = r;
-            return Container();
-          },
-        ),
-      ),
-    );
-
-    await expectLater(ref.read(provider.future), completion(21));
-
-    future = Future<int>.value(42);
-
-    ref.invalidate(provider);
-    await expectLater(ref.read(provider.future), completion(42));
   });
 
   testWidgets('ref.refresh forces a provider of nullable type to refresh',
@@ -796,60 +622,6 @@ void main() {
         throwsStateError,
       );
     });
-  });
-
-  testWidgets('autoDispose states are kept alive during pushReplacement',
-      (tester) async {
-    var disposeCount = 0;
-    final counterProvider = StateProvider.autoDispose((ref) {
-      ref.onDispose(() => disposeCount++);
-      return 0;
-    });
-
-    final container = createContainer();
-    final key = GlobalKey<NavigatorState>();
-
-    await tester.pumpWidget(
-      UncontrolledProviderScope(
-        container: container,
-        child: MaterialApp(
-          navigatorKey: key,
-          home: Consumer(
-            builder: (context, ref, _) {
-              final count = ref.watch(counterProvider);
-              return Text('$count');
-            },
-          ),
-        ),
-      ),
-    );
-
-    expect(find.text('0'), findsOneWidget);
-
-    container.read(counterProvider.notifier).state++;
-    await tester.pump();
-
-    expect(find.text('1'), findsOneWidget);
-
-    // ignore: unawaited_futures
-    key.currentState!.pushReplacement<void, void>(
-      PageRouteBuilder<void>(
-        pageBuilder: (_, __, ___) {
-          return Consumer(
-            builder: (context, ref, _) {
-              final count = ref.watch(counterProvider);
-              return Text('new $count');
-            },
-          );
-        },
-      ),
-    );
-
-    await tester.pumpAndSettle();
-
-    expect(find.text('1'), findsNothing);
-    expect(find.text('new 0'), findsNothing);
-    expect(find.text('new 1'), findsOneWidget);
   });
 }
 

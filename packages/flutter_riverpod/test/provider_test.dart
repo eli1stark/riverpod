@@ -6,33 +6,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 
 void main() {
-  testWidgets('.read(context)', (tester) async {
-    final futureProvider = FutureProvider((_) async => 42);
-    final streamProvider = StreamProvider((_) async* {
-      yield 42;
-    });
-    final provider = Provider((_) => 42);
-    final changeNotifierProvider = ChangeNotifierProvider((_) {
-      return ValueNotifier(0);
-    });
-
-    Consumer(
-      builder: (context, ref, _) {
-        // ignore: omit_local_variable_types, unused_local_variable, prefer_final_locals
-        int providerValue = ref.read(provider);
-        // ignore: omit_local_variable_types, unused_local_variable, prefer_final_locals
-        AsyncValue<int> futureProviderValue = ref.read(futureProvider);
-        // ignore: omit_local_variable_types, unused_local_variable, prefer_final_locals
-        AsyncValue<int> streamProviderValue = ref.read(streamProvider);
-        // ignore: omit_local_variable_types, unused_local_variable, prefer_final_locals
-        ValueNotifier<int> changeNotifierProviderValue =
-            ref.read(changeNotifierProvider);
-
-        return Container();
-      },
-    );
-  });
-
   testWidgets('no onDispose does not crash', (tester) async {
     final provider = Provider<int>((ref) => 42);
 

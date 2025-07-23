@@ -20,7 +20,6 @@ class MyApp extends StatelessWidget {
 }
 
 /// Providers are declared globally and specify how to create a state
-final counterProvider = StateProvider((ref) => 0);
 
 class Home extends ConsumerWidget {
   const Home({super.key});
@@ -33,14 +32,13 @@ class Home extends ConsumerWidget {
         // Consumer is a builder widget that allows you to read providers.
         child: Consumer(
           builder: (context, ref, _) {
-            final count = ref.watch(counterProvider);
-            return Text('$count');
+            return Container();
           },
         ),
       ),
       floatingActionButton: FloatingActionButton(
         // The read method is a utility to read a provider without listening to it
-        onPressed: () => ref.read(counterProvider.notifier).state++,
+        onPressed: () {},
         child: const Icon(Icons.add),
       ),
     );

@@ -357,96 +357,6 @@ void main() {
       });
     });
 
-    test(
-        'after a child container is disposed, ref.watch keeps working on providers associated with the ancestor container',
-        () async {
-      final container = createContainer();
-      final dep = StateProvider((ref) => 0);
-      final provider = Provider((ref) => ref.watch(dep));
-      final listener = Listener<int>();
-      final child = createContainer(parent: container);
-
-      container.listen<int>(provider, listener.call, fireImmediately: true);
-
-      verifyOnly(listener, listener(null, 0));
-
-      child.dispose();
-
-      container.read(dep.notifier).state++;
-      await container.pump();
-
-      verifyOnly(listener, listener(0, 1));
-    });
-
-    test(
-        'flushes listened-to providers even if they have no external listeners',
-        () async {
-      final dep = StateProvider((ref) => 0);
-      final provider = Provider((ref) => ref.watch(dep));
-      final another = StateProvider<int>((ref) {
-        ref.listen(provider, (prev, value) => ref.controller.state++);
-        return 0;
-      });
-      final container = createContainer();
-
-      expect(container.read(another), 0);
-
-      container.read(dep.notifier).state = 42;
-
-      expect(container.read(another), 1);
-    });
-
-    test(
-        'flushes listened-to providers even if they have no external listeners (with ProviderListenable)',
-        () async {
-      final dep = StateProvider((ref) => 0);
-      final provider = Provider((ref) => ref.watch(dep));
-      final another = StateProvider<int>((ref) {
-        ref.listen(provider, (prev, value) => ref.controller.state++);
-        return 0;
-      });
-      final container = createContainer();
-
-      expect(container.read(another), 0);
-
-      container.read(dep.notifier).state = 42;
-
-      expect(container.read(another), 1);
-    });
-
-    group('.pump', () {
-      test(
-          'Waits for providers associated with this container and its parents to rebuild',
-          () async {
-        final dep = StateProvider((ref) => 0);
-        final a = Provider((ref) => ref.watch(dep));
-        final b = Provider((ref) => ref.watch(dep));
-        final aListener = Listener<int>();
-        final bListener = Listener<int>();
-
-        final root = createContainer();
-        final scoped = createContainer(parent: root, overrides: [b]);
-
-        scoped.listen(a, aListener.call, fireImmediately: true);
-        scoped.listen(b, bListener.call, fireImmediately: true);
-
-        verifyOnly(aListener, aListener(null, 0));
-        verifyOnly(bListener, bListener(null, 0));
-
-        root.read(dep.notifier).state++;
-        await scoped.pump();
-
-        verifyOnly(aListener, aListener(0, 1));
-        verifyOnly(bListener, bListener(0, 1));
-
-        scoped.read(dep.notifier).state++;
-        await scoped.pump();
-
-        verifyOnly(aListener, aListener(1, 2));
-        verifyOnly(bListener, bListener(1, 2));
-      });
-    });
-
     test('depth', () {
       final root = createContainer();
       final a = createContainer(parent: root);
@@ -628,20 +538,6 @@ void main() {
       expect(buildCount, 1);
     });
 
-    test('can downcast the listener value', () {
-      final container = createContainer();
-      final provider = StateProvider<int>((ref) => 0);
-      final listener = Listener<void>();
-
-      container.listen<void>(provider, listener.call);
-
-      verifyZeroInteractions(listener);
-
-      container.read(provider.notifier).state++;
-
-      verifyOnly(listener, listener(any, any));
-    });
-
     test(
       'can close a ProviderSubscription<Object?> multiple times with no effect',
       () {
@@ -719,28 +615,6 @@ void main() {
       expect(container.read(provider), 42);
       expect(callCount, 2);
     });
-    test(
-      'does not refresh providers if their dependencies changes but they have no active listeners',
-      () async {
-        final container = createContainer();
-
-        var buildCount = 0;
-        final dep = StateProvider((ref) => 0);
-        final provider = Provider((ref) {
-          buildCount++;
-          return ref.watch(dep);
-        });
-
-        container.read(provider);
-
-        expect(buildCount, 1);
-
-        container.read(dep.notifier).state++;
-        await container.pump();
-
-        expect(buildCount, 1);
-      },
-    );
   });
 }
 

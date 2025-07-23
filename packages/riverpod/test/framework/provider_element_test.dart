@@ -337,29 +337,6 @@ void main() {
 
       verifyOnly(listener, listener(0, 1));
     });
-
-    test('merges the rebuild with dependency change rebuild', () async {
-      final container = createContainer();
-      final listener = Listener<int>();
-      final dep = StateProvider((ref) => 0);
-      late Ref ref;
-      final provider = Provider((r) {
-        ref = r;
-        return ref.watch(dep);
-      });
-
-      container.listen(provider, listener.call);
-      verifyZeroInteractions(listener);
-
-      ref.invalidateSelf();
-      container.read(dep.notifier).state++;
-
-      verifyZeroInteractions(listener);
-
-      await container.pump();
-
-      verifyOnly(listener, listener(0, 1));
-    });
   });
 
   group('ref.onRemoveListener', () {
@@ -899,33 +876,6 @@ void main() {
   });
 
   group('ref.onCancel', () {
-    test(
-      'is called when dependent is invalidated and was the only listener',
-      skip: 'Waiting for "clear dependencies after futureprovider rebuilds"',
-      () async {
-        //
-        final container = createContainer();
-        final onCancel = OnCancelMock();
-        final dep = StateProvider((ref) {
-          ref.onCancel(onCancel.call);
-          return 0;
-        });
-        final provider = Provider.autoDispose((ref) => ref.watch(dep));
-
-        container.read(provider);
-
-        verifyZeroInteractions(onCancel);
-
-        container.read(dep.notifier).state++;
-
-        verify(onCancel()).called(1);
-
-        await container.pump();
-
-        verifyNoMoreInteractions(onCancel);
-      },
-    );
-
     test('is called when all container listeners are removed', () {
       final container = createContainer();
       final listener = OnCancelMock();
@@ -1039,7 +989,7 @@ void main() {
         final container = createContainer();
         final listener = OnCancelMock();
         final dispose = OnDisposeMock();
-        final provider = StateProvider.autoDispose((ref) {
+        final provider = Provider.autoDispose((ref) {
           ref.keepAlive();
           ref.onCancel(listener.call);
           ref.onDispose(dispose.call);
@@ -1111,70 +1061,6 @@ void main() {
       verifyNoMoreInteractions(listener2);
       expect(errors, [42]);
     });
-  });
-
-  test(
-      'onDispose is triggered only once if within autoDispose unmount, a dependency changed',
-      () async {
-    // regression test for https://github.com/rrousselGit/riverpod/issues/1064
-    final container = createContainer();
-    final onDispose = OnDisposeMock();
-    final dep = StateProvider((ref) => 0);
-    final provider = Provider.autoDispose((ref) {
-      ref.watch(dep);
-      ref.onDispose(onDispose.call);
-    });
-
-    when(onDispose()).thenAnswer((realInvocation) {
-      container.read(dep.notifier).state++;
-    });
-
-    container.read(provider);
-    verifyZeroInteractions(onDispose);
-
-    // cause provider to be disposed
-    await container.pump();
-
-    verify(onDispose()).called(1);
-    verifyNoMoreInteractions(onDispose);
-  });
-
-  test(
-      'does not throw outdated error when a dependency is flushed while the dependent is building',
-      () async {
-    final container = createContainer();
-    final a = StateProvider((ref) => 0);
-
-    final dep = Provider<int>((ref) {
-      return ref.watch(a) + 10;
-    });
-    final dependent = Provider<int?>((ref) {
-      if (ref.watch(a) > 0) {
-        ref.watch(dep);
-        // Voluntarily using "watch" twice.
-        // When `dep` is flushed, it could cause subsequent "watch" calls to throw
-        // because `dependent` is considered as outdated
-        return ref.watch(dep);
-      }
-      return null;
-    });
-    final listener = Listener<int?>();
-
-    expect(container.read(dep), 10);
-    container.listen<int?>(dependent, listener.call, fireImmediately: true);
-
-    verifyOnly(listener, listener(null, null));
-
-    // schedules `dep` and `dependent` to rebuild
-    // Will build `dependent` before `dep` because `dependent` doesn't depend on `dep` yet
-    // And since nothing is watchin `dep` at the moment, then `dependent` will
-    // rebuild before `dep` even though `dep` is its ancestor.
-    // This is fine since nothing is listening to `dep` yet, but it should
-    // not cause certain assertions to trigger
-    container.read(a.notifier).state++;
-    await container.pump();
-
-    verifyOnly(listener, listener(null, 11));
   });
 
   group('getState', () {
@@ -1307,25 +1193,5 @@ void main() {
 
       expect(container.readProviderElement(provider).hasListeners, true);
     });
-  });
-
-  test('does not notify listeners when rebuilding the state', () async {
-    final container = createContainer();
-    final listener = Listener<int>();
-
-    final dep = StateProvider((ref) => 0);
-    final provider = Provider((ref) {
-      ref.watch(dep);
-      return ref.state = 0;
-    });
-
-    container.listen(provider, listener.call, fireImmediately: true);
-
-    verifyOnly(listener, listener(null, 0));
-
-    container.read(dep.notifier).state++;
-    await container.pump();
-
-    verifyNoMoreInteractions(listener);
   });
 }

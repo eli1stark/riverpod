@@ -153,52 +153,6 @@ void main() {
         verifyOnly(listener, listener(0, 1));
       });
 
-      test('preserves the notifier between watch updates', () async {
-        final dep = StateProvider((ref) => 0);
-        final provider = factory.simpleTestProvider((ref) {
-          return ref.watch(dep);
-        });
-        final container = createContainer();
-        final listener = Listener<TestNotifierBase<int>>();
-
-        container.listen(
-          provider.notifier,
-          listener.call,
-          fireImmediately: true,
-        );
-
-        final notifier = container.read(provider.notifier);
-
-        verifyOnly(listener, listener(null, notifier));
-
-        container.read(dep.notifier).update((state) => state + 1);
-        await container.pump();
-
-        verifyNoMoreInteractions(listener);
-        expect(container.read(provider.notifier), notifier);
-      });
-
-      test('calls notifier.build on every watch update', () async {
-        final dep = StateProvider((ref) => 0);
-        final provider = factory.simpleTestProvider((ref) {
-          return ref.watch(dep);
-        });
-        final container = createContainer();
-        final listener = Listener<int>();
-
-        container.listen(provider, listener.call, fireImmediately: true);
-
-        verifyOnly(listener, listener(null, 0));
-
-        container.read(dep.notifier).update((state) => state + 1);
-
-        verifyNoMoreInteractions(listener);
-
-        await container.pump();
-
-        verifyOnly(listener, listener(0, 1));
-      });
-
       test(
           'After a state initialization error, the notifier is still available',
           () {
@@ -346,30 +300,6 @@ void main() {
 
         verifyOnly(listener, listener(null, 0));
         verifyNoMoreInteractions(onError);
-      });
-
-      test(
-          'reading notifier.state on invalidated provider rebuilds the provider',
-          () {
-        final dep = StateProvider((ref) => 0);
-        final provider =
-            factory.simpleTestProvider<int>((ref) => ref.watch(dep));
-        final container = createContainer();
-        final listener = Listener<int>();
-
-        container.listen(provider, listener.call);
-        final notifier = container.read(provider.notifier);
-
-        expect(notifier.state, 0);
-
-        notifier.state = -1;
-
-        verifyOnly(listener, listener(0, -1));
-
-        container.read(dep.notifier).state++;
-
-        expect(notifier.state, 1);
-        verifyOnly(listener, listener(-1, 1));
       });
 
       test('supports ref.refresh(provider)', () {

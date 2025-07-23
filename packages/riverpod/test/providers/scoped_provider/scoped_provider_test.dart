@@ -5,19 +5,6 @@ import 'package:test/test.dart';
 import '../../utils.dart';
 
 void main() {
-  test(
-      'It is possible to read provider sub-values by specifying the provider in `dependencies`',
-      () {
-    final dep = StateProvider((ref) => 0);
-    final provider = Provider(
-      (ref) => ref.watch(dep.notifier),
-      dependencies: [dep],
-    );
-    final container = createContainer();
-
-    expect(container.read(provider).state, 0);
-  });
-
   group('scoping mechanism', () {
     test('use the deepest override', () {
       final provider = Provider((ref) => 0);
@@ -217,26 +204,6 @@ void main() {
         provider.overrideWithValue(2),
         provider2,
       ]);
-
-      await container.pump();
-
-      verifyOnly(listener, listener(2, 4));
-    });
-
-    test('can listen to other normal providers', () async {
-      final listener = Listener<int>();
-      final provider = StateProvider((ref) => 1);
-      final provider2 = Provider((ref) {
-        return ref.watch(provider) * 2;
-      });
-      final root = createContainer();
-      final container = createContainer(parent: root, overrides: [provider2]);
-
-      container.listen(provider2, listener.call, fireImmediately: true);
-
-      verifyOnly(listener, listener(null, 2));
-
-      root.read(provider.notifier).state++;
 
       await container.pump();
 

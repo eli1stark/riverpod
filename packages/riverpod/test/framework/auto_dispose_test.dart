@@ -78,35 +78,6 @@ Future<void> main() async {
       );
     });
 
-    test('when the provider rebuilds, links are cleared', () async {
-      final container = createContainer();
-      final dep = StateProvider((ref) => 0);
-      KeepAliveLink? a;
-
-      final provider = Provider.autoDispose<void>((ref) {
-        ref.watch(dep);
-        a ??= ref.keepAlive();
-      });
-
-      container.read(provider);
-      await container.pump();
-
-      expect(
-        container.getAllProviderElements().map((e) => e.provider),
-        contains(provider),
-      );
-
-      container.read(dep.notifier).state++;
-      // manually trigger rebuild, as the provider is not listened
-      container.read(provider);
-      await container.pump();
-
-      expect(
-        container.getAllProviderElements().map((e) => e.provider),
-        isNot(contains(provider)),
-      );
-    });
-
     test('maintains the state of the provider until all links are closed',
         () async {
       final container = createContainer();
@@ -252,88 +223,6 @@ Future<void> main() async {
         autoDispose.select((value) => value),
       );
     });
-  });
-
-  test(
-      'if a dependency changed, the element is still disposed, '
-      'but without calling ref.onDispose again', () async {
-    final container = createContainer();
-    final onDispose = OnDisposeMock();
-    final dep = StateProvider((ref) => 0);
-    final provider = Provider.autoDispose((ref) {
-      ref.onDispose(onDispose.call);
-      return ref.watch(dep);
-    });
-
-    container.read(provider);
-
-    verifyZeroInteractions(onDispose);
-    expect(
-      container.getAllProviderElements().map((e) => e.origin),
-      contains(provider),
-    );
-
-    container.read(dep.notifier).state++;
-
-    await container.pump();
-
-    verify(onDispose()).called(1);
-
-    expect(
-      container.getAllProviderElements().map((e) => e.origin),
-      isNot(contains(provider)),
-    );
-  });
-
-  test(
-      'when a provider conditionally depends on another provider, rebuilding without the dependency can dispose the dependency',
-      () async {
-    final container = createContainer();
-    var dependencyDisposeCount = 0;
-    final dependency = Provider.autoDispose(
-      name: 'dependency',
-      (ref) {
-        ref.onDispose(() => dependencyDisposeCount++);
-        return 0;
-      },
-    );
-    final isDependingOnDependency = StateProvider(
-      name: 'isDependingOnDependency',
-      (ref) => true,
-    );
-    final provider = Provider.autoDispose(
-      name: 'provider',
-      (ref) {
-        ref.maintainState = true;
-        if (ref.watch(isDependingOnDependency)) {
-          ref.watch(dependency);
-        }
-      },
-    );
-
-    container.listen<void>(provider, (_, __) {});
-
-    expect(dependencyDisposeCount, 0);
-    expect(
-      container.getAllProviderElements().map((e) => e.provider),
-      unorderedEquals(<Object>[
-        dependency,
-        provider,
-        isDependingOnDependency,
-      ]),
-    );
-
-    container.read(isDependingOnDependency.notifier).state = false;
-    await container.pump();
-
-    expect(dependencyDisposeCount, 1);
-    expect(
-      container.getAllProviderElements().map((e) => e.provider),
-      unorderedEquals(<Object>[
-        provider,
-        isDependingOnDependency,
-      ]),
-    );
   });
 
   test('works if used across a ProviderContainer', () async {

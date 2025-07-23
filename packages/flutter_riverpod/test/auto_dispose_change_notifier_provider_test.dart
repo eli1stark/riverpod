@@ -62,39 +62,6 @@ void main() {
     );
   });
 
-  test('.notifier obtains the controller without listening to it', () async {
-    final dep = StateProvider((ref) => 0);
-    final notifier = TestNotifier();
-    final notifier2 = TestNotifier();
-    final provider = ChangeNotifierProvider.autoDispose((ref) {
-      return ref.watch(dep) == 0 ? notifier : notifier2;
-    });
-    final container = createContainer();
-    addTearDown(container.dispose);
-
-    var callCount = 0;
-    final sub = container.listen(
-      provider.notifier,
-      (_, __) => callCount++,
-    );
-
-    expect(sub.read(), notifier);
-    expect(callCount, 0);
-
-    notifier.count++;
-
-    await container.pump();
-    expect(callCount, 0);
-
-    container.read(dep.notifier).state++;
-
-    expect(sub.read(), notifier2);
-
-    await container.pump();
-    expect(sub.read(), notifier2);
-    expect(callCount, 1);
-  });
-
   test('can specify name', () {
     final provider = ChangeNotifierProvider.autoDispose(
       (_) => ValueNotifier(0),

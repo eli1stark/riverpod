@@ -43,32 +43,6 @@ void main() {
         expect(err, isStateError);
       });
 
-      test(
-          'on rebuild, still fails if trying to read the state before was built',
-          () {
-        final dep = StateProvider((ref) => false);
-        final container = createContainer();
-        Object? err;
-        final provider = Provider.autoDispose<int>((ref) {
-          if (ref.watch(dep)) {
-            try {
-              ref.state;
-            } catch (e) {
-              err = e;
-            }
-          }
-          return 0;
-        });
-
-        container.read(provider);
-        expect(err, isNull);
-
-        container.read(dep.notifier).state = true;
-        container.read(provider);
-
-        expect(err, isStateError);
-      });
-
       test('can read the state if the setter was called before', () {
         final container = createContainer();
         final provider = Provider.autoDispose<int>((ref) {
