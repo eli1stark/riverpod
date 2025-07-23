@@ -11,8 +11,6 @@ dependencies:
     sdk: flutter
   flutter_riverpod:
     path: ../../flutter_riverpod
-  hooks_riverpod:
-    path: ../../hooks_riverpod
   riverpod:
     path: ../../riverpod
 
@@ -23,8 +21,6 @@ dev_dependencies:
 dependency_overrides:
   flutter_riverpod:
     path: ../../flutter_riverpod
-  hooks_riverpod:
-    path: ../../hooks_riverpod
   riverpod:
     path: ../../riverpod
 
