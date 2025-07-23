@@ -1,5 +1,3 @@
-export 'package:state_notifier/state_notifier.dart' hide Listener, LocatorMixin;
-
 export 'src/framework.dart'
     hide
         ProviderScheduler,
@@ -38,4 +36,3 @@ export 'src/notifier.dart'
         BuildlessAutoDisposeNotifier,
         BuildlessNotifier;
 export 'src/provider.dart' hide InternalProvider;
-export 'src/state_controller.dart';

@@ -30,10 +30,5 @@ void main() {
       providerBuilder.family,
       Provider.family,
     );
-    expect(
-      providerBuilder((ref) => StateController(42), name: 'foo'),
-      isA<Provider<StateController<int>>>()
-          .having((s) => s.name, 'name', 'foo'),
-    );
   });
 }

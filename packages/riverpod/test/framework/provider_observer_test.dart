@@ -229,15 +229,6 @@ class OnDisposeMock extends Mock {
   void call();
 }
 
-class Counter extends StateNotifier<int> {
-  Counter() : super(0);
-
-  void increment() => state++;
-
-  // ignore: use_setters_to_change_properties
-  void setState(int value) => state = value;
-}
-
 class ConstObserver extends ProviderObserver {
   const ConstObserver();
 }

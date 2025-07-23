@@ -1,5 +1,15 @@
 part of '../framework.dart';
 
+/// A callback that can be used to remove a listener added with
+/// [StateNotifier.addListener].
+///
+/// It is safe to call this callback multiple times.
+///
+/// Calling this callback multiple times will remove the listener only once,
+/// even if [StateNotifier.addListener] was called multiple times with the exact
+/// same listener.
+typedef RemoveListener = void Function();
+
 class _ProxySubscription<T> extends ProviderSubscription<T> {
   _ProxySubscription(
     super.source,

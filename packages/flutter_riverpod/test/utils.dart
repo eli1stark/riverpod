@@ -22,12 +22,6 @@ ProviderContainer createContainer({
   return container;
 }
 
-class Counter extends StateNotifier<int> {
-  Counter() : super(0);
-
-  void increment() => state++;
-}
-
 class Listener<T> extends Mock {
   void call(T? prev, T? value);
 }

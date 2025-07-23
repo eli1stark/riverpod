@@ -11,17 +11,6 @@ R Function(Key) cacheFamily<Key, R>(R Function(Key key) create) {
   return (key) => cache.putIfAbsent(key, () => create(key));
 }
 
-class Counter extends StateNotifier<int> {
-  Counter([super.initialValue = 0]);
-
-  void increment() => state++;
-
-  @override
-  int get state => super.state;
-  @override
-  set state(int value) => super.state = value;
-}
-
 ProviderContainer createContainer({
   ProviderContainer? parent,
   List<Override> overrides = const [],

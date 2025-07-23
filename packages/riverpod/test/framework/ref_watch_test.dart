@@ -3,17 +3,6 @@ import 'package:test/test.dart';
 
 import '../utils.dart';
 
-class Counter extends StateNotifier<int> {
-  Counter([super.initialValue = 0]);
-
-  @override
-  int get state => super.state;
-  @override
-  set state(int value) => super.state = value;
-
-  void increment() => state++;
-}
-
 void main() {
   test('when selector throws, rebuild providers', () {}, skip: true);
 
@@ -83,11 +72,4 @@ void main() {
       throwsA(isA<AssertionError>()),
     );
   });
-}
-
-class Notifier<T> extends StateNotifier<T> {
-  Notifier(super._state);
-
-  // ignore: use_setters_to_change_properties
-  void setState(T value) => state = value;
 }

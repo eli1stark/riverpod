@@ -248,15 +248,6 @@ void main() {
   });
 }
 
-class TestNotifier extends StateNotifier<int> {
-  TestNotifier([super.initialValue = 0]);
-
-  void increment() => state++;
-
-  // ignore: avoid_setters_without_getters
-  set value(int value) => state = value;
-}
-
 final _provider = Provider((ref) => 'hello world');
 
 class MyWidget extends ConsumerWidget {

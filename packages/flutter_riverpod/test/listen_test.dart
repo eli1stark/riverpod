@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart' hide Listener;
-import 'package:flutter_riverpod/flutter_riverpod.dart' hide ErrorListener;
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
