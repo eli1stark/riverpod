@@ -1,4 +1,3 @@
-import 'package:mockito/mockito.dart';
 import 'package:riverpod/src/internals.dart';
 import 'package:test/test.dart';
 
@@ -114,66 +113,4 @@ void main() {
       );
     });
   });
-
-  test("nested initState can't mark dirty other providers", () {
-    final counter = Counter();
-    final provider = StateNotifierProvider<Counter, int>((_) => counter);
-    final nested = Provider((_) => 0);
-    final provider2 = Provider((ref) {
-      ref.watch(nested);
-      counter.increment();
-      return 0;
-    });
-
-    expect(container.read(provider), 0);
-
-    expect(errorsOf(() => container.read(provider2)), isNotEmpty);
-  });
-
-  test('auto dispose can dirty providers', () async {
-    final counter = Counter();
-    final provider = StateNotifierProvider<Counter, int>((_) => counter);
-    var didDispose = false;
-    final provider2 = Provider.autoDispose((ref) {
-      ref.onDispose(() {
-        didDispose = true;
-        counter.increment();
-      });
-    });
-
-    container.read(provider);
-
-    final sub = container.listen<void>(provider2, (_, __) {});
-    sub.close();
-
-    expect(counter.state, 0);
-
-    await container.pump();
-
-    expect(didDispose, true);
-    expect(counter.state, 1);
-  });
-
-  test("Provider can't dirty anything on create", () {
-    final counter = Counter();
-    final provider = StateNotifierProvider<Counter, int>((_) => counter);
-    late List<Object> errors;
-    final computed = Provider((ref) {
-      errors = errorsOf(counter.increment);
-      return 0;
-    });
-    final listener = Listener<int>();
-
-    expect(container.read(provider), 0);
-
-    container.listen(computed, listener.call, fireImmediately: true);
-
-    verify(listener(null, 0)).called(1);
-    verifyNoMoreInteractions(listener);
-    expect(errors, isNotEmpty);
-  });
 }
-
-// class VsyncMock extends Mock {
-//   void call();
-// }

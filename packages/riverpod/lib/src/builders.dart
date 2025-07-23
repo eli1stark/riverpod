@@ -8,8 +8,6 @@
 // You can then use it in your terminal by executing:
 // generate_providers <riverpod/flutter_riverpod/hooks_riverpod> <path to builder file to update>
 
-import 'package:state_notifier/state_notifier.dart';
-
 import 'internals.dart';
 
 /// Builds a [NotifierProvider].
@@ -112,64 +110,6 @@ class AutoDisposeNotifierProviderFamilyBuilder {
   }
 }
 
-/// Builds a [StateNotifierProvider].
-class StateNotifierProviderBuilder {
-  /// Builds a [StateNotifierProvider].
-  const StateNotifierProviderBuilder();
-
-  /// {@macro riverpod.autoDispose}
-  StateNotifierProvider<Notifier, State>
-      call<Notifier extends StateNotifier<State>, State>(
-    // ignore: deprecated_member_use_from_same_package
-    Create<Notifier, StateNotifierProviderRef<Notifier, State>> create, {
-    String? name,
-    Iterable<ProviderOrFamily>? dependencies,
-  }) {
-    return StateNotifierProvider<Notifier, State>(
-      create,
-      name: name,
-      dependencies: dependencies,
-    );
-  }
-
-  /// {@macro riverpod.autoDispose}
-  AutoDisposeStateNotifierProviderBuilder get autoDispose {
-    return const AutoDisposeStateNotifierProviderBuilder();
-  }
-
-  /// {@macro riverpod.family}
-  StateNotifierProviderFamilyBuilder get family {
-    return const StateNotifierProviderFamilyBuilder();
-  }
-}
-
-/// Builds a [StateNotifierProviderFamily].
-class StateNotifierProviderFamilyBuilder {
-  /// Builds a [StateNotifierProviderFamily].
-  const StateNotifierProviderFamilyBuilder();
-
-  /// {@macro riverpod.family}
-  StateNotifierProviderFamily<Notifier, State, Arg>
-      call<Notifier extends StateNotifier<State>, State, Arg>(
-    // ignore: deprecated_member_use_from_same_package
-    FamilyCreate<Notifier, StateNotifierProviderRef<Notifier, State>, Arg>
-        create, {
-    String? name,
-    Iterable<ProviderOrFamily>? dependencies,
-  }) {
-    return StateNotifierProviderFamily<Notifier, State, Arg>(
-      create,
-      name: name,
-      dependencies: dependencies,
-    );
-  }
-
-  /// {@macro riverpod.autoDispose}
-  AutoDisposeStateNotifierProviderFamilyBuilder get autoDispose {
-    return const AutoDisposeStateNotifierProviderFamilyBuilder();
-  }
-}
-
 /// Builds a [Provider].
 class ProviderBuilder {
   /// Builds a [Provider].
@@ -222,56 +162,6 @@ class ProviderFamilyBuilder {
   /// {@macro riverpod.autoDispose}
   AutoDisposeProviderFamilyBuilder get autoDispose {
     return const AutoDisposeProviderFamilyBuilder();
-  }
-}
-
-/// Builds a [AutoDisposeStateNotifierProvider].
-class AutoDisposeStateNotifierProviderBuilder {
-  /// Builds a [AutoDisposeStateNotifierProvider].
-  const AutoDisposeStateNotifierProviderBuilder();
-
-  /// {@macro riverpod.autoDispose}
-  AutoDisposeStateNotifierProvider<Notifier, State>
-      call<Notifier extends StateNotifier<State>, State>(
-    // ignore: deprecated_member_use_from_same_package
-    Create<Notifier, AutoDisposeStateNotifierProviderRef<Notifier, State>>
-        create, {
-    String? name,
-    Iterable<ProviderOrFamily>? dependencies,
-  }) {
-    return AutoDisposeStateNotifierProvider<Notifier, State>(
-      create,
-      name: name,
-      dependencies: dependencies,
-    );
-  }
-
-  /// {@macro riverpod.family}
-  AutoDisposeStateNotifierProviderFamilyBuilder get family {
-    return const AutoDisposeStateNotifierProviderFamilyBuilder();
-  }
-}
-
-/// Builds a [AutoDisposeStateNotifierProviderFamily].
-class AutoDisposeStateNotifierProviderFamilyBuilder {
-  /// Builds a [AutoDisposeStateNotifierProviderFamily].
-  const AutoDisposeStateNotifierProviderFamilyBuilder();
-
-  /// {@macro riverpod.family}
-  AutoDisposeStateNotifierProviderFamily<Notifier, State, Arg>
-      call<Notifier extends StateNotifier<State>, State, Arg>(
-    // ignore: deprecated_member_use_from_same_package
-    FamilyCreate<Notifier, AutoDisposeStateNotifierProviderRef<Notifier, State>,
-            Arg>
-        create, {
-    String? name,
-    Iterable<ProviderOrFamily>? dependencies,
-  }) {
-    return AutoDisposeStateNotifierProviderFamily<Notifier, State, Arg>(
-      create,
-      name: name,
-      dependencies: dependencies,
-    );
   }
 }
 

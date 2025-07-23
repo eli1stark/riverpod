@@ -291,82 +291,6 @@ void main() {
       verifyZeroInteractions(listener);
     });
 
-    test('expose previous and new value on change', () {
-      final container = createContainer();
-      final dep = StateNotifierProvider<StateController<int>, int>(
-        (ref) => StateController(0),
-      );
-      final listener = Listener<int>();
-      final provider = Provider((ref) {
-        ref.listen<int>(dep, listener.call, fireImmediately: true);
-      });
-
-      container.read(provider);
-
-      verifyOnly(listener, listener(null, 0));
-
-      container.read(dep.notifier).state++;
-
-      verifyOnly(listener, listener(0, 1));
-    });
-
-    test(
-        'calling ref.listen on a provider with an outdated dependency flushes it, then add the listener',
-        () {
-      final container = createContainer();
-      var buildCount = 0;
-      final dep2 = StateNotifierProvider<StateController<int>, int>(
-        (ref) => StateController(0),
-      );
-      final dep = Provider<int>((ref) {
-        buildCount++;
-        return ref.watch(dep2);
-      });
-      final listener = Listener<int>();
-      final provider = Provider((ref) {
-        ref.listen<int>(dep, listener.call);
-      });
-
-      container.read(dep);
-      container.read(dep2.notifier).state++; // mark `dep` as outdated
-
-      expect(buildCount, 1);
-      verifyZeroInteractions(listener);
-
-      container.read(provider);
-
-      expect(buildCount, 2);
-      verifyZeroInteractions(listener);
-    });
-
-    test(
-        'when using selectors, `previous` is the latest notification instead of latest event',
-        () {
-      final container = createContainer();
-      final dep = StateNotifierProvider<StateController<int>, int>(
-        (ref) => StateController(0),
-      );
-      final listener = Listener<bool>();
-      final provider = Provider((ref) {
-        ref.listen<bool>(
-          dep.select((value) => value.isEven),
-          listener.call,
-          fireImmediately: true,
-        );
-      });
-
-      container.read(provider);
-      verifyOnly(listener, listener(null, true));
-
-      container.read(dep.notifier).state += 2;
-
-      verifyNoMoreInteractions(listener);
-
-      container.read(dep.notifier).state++;
-
-      verifyOnly(listener, listener(true, false));
-    });
-
     group('fireImmediately', () {
       test('when no onError is specified, fallbacks to handleUncaughtError',
           () {
@@ -473,48 +397,6 @@ void main() {
   });
 
   group('ProviderContainer.listen', () {
-    test(
-        'when using selectors, `previous` is the latest notification instead of latest event',
-        () {
-      final container = createContainer();
-      final provider = StateNotifierProvider<StateController<int>, int>(
-        (ref) => StateController(0),
-      );
-      final listener = Listener<bool>();
-
-      container.listen<bool>(
-        provider.select((value) => value.isEven),
-        listener.call,
-        fireImmediately: true,
-      );
-
-      verifyOnly(listener, listener(null, true));
-
-      container.read(provider.notifier).state += 2;
-
-      verifyNoMoreInteractions(listener);
-
-      container.read(provider.notifier).state++;
-
-      verifyOnly(listener, listener(true, false));
-    });
-
-    test('expose previous and new value on change', () {
-      final container = createContainer();
-      final provider = StateNotifierProvider<StateController<int>, int>(
-        (ref) => StateController(0),
-      );
-      final listener = Listener<int>();
-
-      container.listen<int>(provider, listener.call, fireImmediately: true);
-
-      verifyOnly(listener, listener(null, 0));
-
-      container.read(provider.notifier).state++;
-
-      verifyOnly(listener, listener(0, 1));
-    });
-
     group('fireImmediately', () {
       test('when no onError is specified, fallbacks to handleUncaughtError',
           () {
@@ -584,74 +466,6 @@ void main() {
           errorListener(isUnimplementedError, argThat(isNotNull)),
         );
       });
-
-      test('supports selectors', () {
-        final container = createContainer();
-        final provider =
-            StateNotifierProvider<Counter, int>((ref) => Counter());
-        final listener = Listener<bool>();
-        final listener2 = Listener<bool>();
-
-        container.listen(
-          provider.select((v) => v.isEven),
-          listener.call,
-          fireImmediately: true,
-        );
-        container.listen(provider.select((v) => v.isEven), listener2.call);
-
-        verifyOnly(listener, listener(null, true));
-        verifyZeroInteractions(listener2);
-
-        container.read(provider.notifier).state = 21;
-
-        verifyOnly(listener, listener(true, false));
-        verifyOnly(listener2, listener2(true, false));
-      });
-    });
-
-    test('.read on closed subscription throws', () {
-      final notifier = Counter();
-      final provider = StateNotifierProvider<Counter, int>((_) => notifier);
-      final container = createContainer();
-      final listener = Listener<int>();
-
-      final sub = container.listen(
-        provider,
-        listener.call,
-        fireImmediately: true,
-      );
-
-      verify(listener(null, 0)).called(1);
-      verifyNoMoreInteractions(listener);
-
-      sub.close();
-      notifier.increment();
-
-      expect(sub.read, throwsStateError);
-
-      verifyNoMoreInteractions(listener);
-    });
-
-    test('.read on closed selector subscription throws', () {
-      final notifier = Counter();
-      final provider = StateNotifierProvider<Counter, int>((_) => notifier);
-      final container = createContainer();
-      final listener = Listener<int>();
-
-      final sub = container.listen(
-        provider.select((value) => value * 2),
-        listener.call,
-        fireImmediately: true,
-      );
-
-      verify(listener(null, 0)).called(1);
-      verifyNoMoreInteractions(listener);
-
-      sub.close();
-      notifier.increment();
-
-      expect(sub.read, throwsStateError);
-      verifyNoMoreInteractions(listener);
     });
 
     test("doesn't trow when creating a provider that failed", () {
@@ -663,56 +477,6 @@ void main() {
       final sub = container.listen(provider, (_, __) {});
 
       expect(sub, isA<ProviderSubscription<Object?>>());
-    });
-
-    test('selectors can close listeners', () {
-      final container = createContainer();
-      final provider = StateNotifierProvider<Counter, int>((ref) => Counter());
-
-      expect(container.readProviderElement(provider).hasListeners, false);
-
-      final sub = container.listen<bool>(
-        provider.select((count) => count.isEven),
-        (prev, isEven) {},
-      );
-
-      expect(container.readProviderElement(provider).hasListeners, true);
-
-      sub.close();
-
-      expect(container.readProviderElement(provider).hasListeners, false);
-    });
-
-    test('can watch selectors', () async {
-      final container = createContainer();
-      final provider = StateNotifierProvider<Counter, int>((ref) => Counter());
-      final isAdultSelector = Selector<int, bool>(false, (c) => c >= 18);
-      final isAdultListener = Listener<bool>();
-
-      final controller = container.read(provider.notifier);
-      container.listen<bool>(
-        provider.select(isAdultSelector.call),
-        isAdultListener.call,
-        fireImmediately: true,
-      );
-
-      verifyOnly(isAdultSelector, isAdultSelector(0));
-      verifyOnly(isAdultListener, isAdultListener(null, false));
-
-      controller.state += 10;
-
-      verifyOnly(isAdultSelector, isAdultSelector(10));
-      verifyNoMoreInteractions(isAdultListener);
-
-      controller.state += 10;
-
-      verifyOnly(isAdultSelector, isAdultSelector(20));
-      verifyOnly(isAdultListener, isAdultListener(false, true));
-
-      controller.state += 10;
-
-      verifyOnly(isAdultSelector, isAdultSelector(30));
-      verifyNoMoreInteractions(isAdultListener);
     });
 
     test('calls immediately the listener with the current value', () {

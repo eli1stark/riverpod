@@ -288,53 +288,6 @@ void main() {
     expect(callCount, 1);
   });
 
-  test("rebuild don't notify clients if == doesn't change", () {
-    final container = createContainer();
-    final counter = Counter();
-    final other = StateNotifierProvider<Counter, int>((ref) => counter);
-    var buildCount = 0;
-    final provider = Provider((ref) {
-      buildCount++;
-      return ref.watch(other).isEven;
-    });
-    final listener = Listener<bool>();
-
-    final sub =
-        container.listen(provider, listener.call, fireImmediately: true);
-
-    verifyOnly(listener, listener(null, true));
-    expect(sub.read(), true);
-    expect(buildCount, 1);
-
-    counter.increment();
-    counter.increment();
-
-    expect(sub.read(), true);
-    expect(buildCount, 2);
-    verifyNoMoreInteractions(listener);
-  });
-
-  test('rebuild notify clients if == did change', () {
-    final container = createContainer();
-    final counter = Counter();
-    final other = StateNotifierProvider<Counter, int>((ref) => counter);
-    final provider = Provider((ref) {
-      return ref.watch(other).isEven;
-    });
-    final listener = Listener<bool>();
-
-    final sub =
-        container.listen(provider, listener.call, fireImmediately: true);
-
-    verifyOnly(listener, listener(null, true));
-    expect(sub.read(), true);
-
-    counter.increment();
-
-    expect(sub.read(), false);
-    verifyOnly(listener, listener(true, false));
-  });
-
   test('can be auto-scoped', () async {
     final dep = Provider((ref) => 0);
     final provider = Provider(

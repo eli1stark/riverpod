@@ -6,7 +6,6 @@
 library internals;
 
 export 'builders.dart';
-export 'common.dart';
 export 'framework.dart';
 export 'listenable.dart';
 export 'notifier.dart';
@@ -14,4 +13,3 @@ export 'provider.dart';
 export 'result.dart';
 export 'run_guarded.dart';
 export 'stack_trace.dart';
-export 'state_notifier_provider.dart';

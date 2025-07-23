@@ -1,5 +1,4 @@
 import 'package:mockito/mockito.dart';
-import 'package:riverpod/riverpod.dart';
 import 'package:riverpod/src/internals.dart';
 import 'package:test/test.dart';
 
@@ -537,58 +536,6 @@ void main() {
 
       expect(buildCount, 1);
     });
-
-    test(
-      'can close a ProviderSubscription<Object?> multiple times with no effect',
-      () {
-        final container = createContainer();
-        final provider =
-            StateNotifierProvider<StateController<int>, int>((ref) {
-          return StateController(0);
-        });
-        final listener = Listener<int>();
-
-        final controller = container.read(provider.notifier);
-
-        final sub = container.listen(provider, listener.call);
-
-        sub.close();
-        sub.close();
-
-        controller.state++;
-
-        verifyZeroInteractions(listener);
-      },
-    );
-
-    test(
-      'closing an already closed ProviderSubscription<Object?> does not remove subscriptions with the same listener',
-      () {
-        final container = createContainer();
-        final provider =
-            StateNotifierProvider<StateController<int>, int>((ref) {
-          return StateController(0);
-        });
-        final listener = Listener<int>();
-
-        final controller = container.read(provider.notifier);
-
-        final sub = container.listen(provider, listener.call);
-        container.listen(provider, listener.call);
-
-        controller.state++;
-
-        verify(listener(0, 1)).called(2);
-        verifyNoMoreInteractions(listener);
-
-        sub.close();
-        sub.close();
-
-        controller.state++;
-
-        verifyOnly(listener, listener(1, 2));
-      },
-    );
 
     test('builds providers at most once per container', () {
       var result = 42;
